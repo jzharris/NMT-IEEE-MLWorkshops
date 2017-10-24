@@ -14,6 +14,10 @@ from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
 from keras import backend as K
+
+import os
+import os.path as path
+
 K.set_image_dim_ordering('th')
 
 # fix random seed for reproducibility
@@ -63,8 +67,16 @@ sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 print(model.summary())
 
+if path.exists('out/cifar_complex_cnn.h5'):
+    model.load_weights('out/cifar_complex_cnn.h5')
+
 # Fit the model
 model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=64)
 # Final evaluation of the model
 scores = model.evaluate(X_test, y_test, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
+
+if not path.exists('out'):
+    os.mkdir('out')
+
+model.save_weights('out/cifar_complex_cnn.h5')

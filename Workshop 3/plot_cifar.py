@@ -1,6 +1,7 @@
 # Required packages:
 # pip3 install matplotlib
 # sudo apt-get install python3-tk
+# pip3 install scipy
 
 # Plot ad hoc CIFAR10 instances
 from keras.datasets import cifar10
