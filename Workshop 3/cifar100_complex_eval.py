@@ -108,7 +108,7 @@ def main():
         ]
 
         # pull first 9 images out:
-        images = X_train[:9]
+        images = X_test[:9]
 
         # make prediction
         prediction = model.predict(images)
