@@ -18,6 +18,8 @@ import tensorflow as tf
 from tensorflow.python.tools import freeze_graph
 from tensorflow.python.tools import optimize_for_inference_lib
 
+import matplotlib.pyplot as plt
+
 MODEL_NAME = 'mnist_convnet'
 EPOCHS = 1
 BATCH_SIZE = 128
@@ -25,6 +27,19 @@ BATCH_SIZE = 128
 
 def load_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+    # plot 4 images as gray scale
+    plt.subplot(221)
+    plt.imshow(x_train[0], cmap=plt.get_cmap('gray'))
+    plt.subplot(222)
+    plt.imshow(x_train[1], cmap=plt.get_cmap('gray'))
+    plt.subplot(223)
+    plt.imshow(x_train[2], cmap=plt.get_cmap('gray'))
+    plt.subplot(224)
+    plt.imshow(x_train[3], cmap=plt.get_cmap('gray'))
+    # show the plot
+    plt.show()
+
     x_train = x_train.reshape(x_train.shape[0], 28, 28, 1)
     x_test = x_test.reshape(x_test.shape[0], 28, 28, 1)
     x_train = x_train.astype('float32')
