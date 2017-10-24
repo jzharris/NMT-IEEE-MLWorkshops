@@ -1,23 +1,22 @@
-## Example is from here:
-## https://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
-
-# Simple CNN model for CIFAR-10
+# Evaluation program for CIFAR-100
 
 import os
 import os.path as path
 
-import numpy
+import numpy as np
 from keras.datasets import cifar100
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.constraints import maxnorm
-from keras.optimizers import SGD
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
 from keras import backend as K
+
+from matplotlib import pyplot
+from scipy.misc import toimage
 
 # Compile model
 epochs = 50
@@ -28,8 +27,7 @@ K.set_image_dim_ordering('th')
 
 # fix random seed for reproducibility
 seed = 7
-numpy.random.seed(seed)
-
+np.random.seed(seed)
 
 def load_data():
     (X_train, y_train), (X_test, y_test) = cifar100.load_data()
@@ -72,24 +70,6 @@ def build_model(num_classes):
     return model
 
 
-def train(model, X_train, y_train, X_test, y_test):
-    decay = lrate/epochs
-    sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-    print(model.summary())
-
-    # Fit the model
-    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=64)
-
-    return model
-
-
-def evaluate(model, X_test, y_test):
-    # Final evaluation of the model
-    scores = model.evaluate(X_test, y_test, verbose=0)
-    print("Accuracy: %.2f%%" % (scores[1]*100))
-
-
 def load(model, filename):
     if not path.exists('out'):
         os.mkdir('out')
@@ -100,25 +80,49 @@ def load(model, filename):
     return model
 
 
-def save(model, filename):
-    if not path.exists('out'):
-        os.mkdir('out')
-
-    model.save_weights(filename)
-
-
 def main():
     filename = 'out/cifar100_complex_cnn.h5'
 
-    X_train, y_train, X_test, y_test = load_data()
+    if path.exists(filename):
+        X_train, y_train, X_test, y_test = load_data()
 
-    model = load(build_model(y_test.shape[1]), filename)
+        model = load(build_model(y_test.shape[1]), filename)
 
-    model = train(model, X_train, y_train, X_test, y_test)
+        # declare categories:
+        categories = [
+            'apple', 'aquarium_fish', 'baby', 'bear', 'beaver', 'bed', 'bee', 'beetle',
+            'bicycle', 'bottle', 'bowl', 'boy', 'bridge', 'bus', 'butterfly', 'camel',
+            'can', 'castle', 'caterpillar', 'cattle', 'chair', 'chimpanzee', 'clock',
+            'cloud', 'cockroach', 'couch', 'crab', 'crocodile', 'cup', 'dinosaur',
+            'dolphin', 'elephant', 'flatfish', 'forest', 'fox', 'girl', 'hamster',
+            'house', 'kangaroo', 'keyboard', 'lamp', 'lawn_mower', 'leopard', 'lion',
+            'lizard', 'lobster', 'man', 'maple_tree', 'motorcycle', 'mountain', 'mouse',
+            'mushroom', 'oak_tree', 'orange', 'orchid', 'otter', 'palm_tree', 'pear',
+            'pickup_truck', 'pine_tree', 'plain', 'plate', 'poppy', 'porcupine',
+            'possum', 'rabbit', 'raccoon', 'ray', 'road', 'rocket', 'rose',
+            'sea', 'seal', 'shark', 'shrew', 'skunk', 'skyscraper', 'snail', 'snake',
+            'spider', 'squirrel', 'streetcar', 'sunflower', 'sweet_pepper', 'table',
+            'tank', 'telephone', 'television', 'tiger', 'tractor', 'train', 'trout',
+            'tulip', 'turtle', 'wardrobe', 'whale', 'willow_tree', 'wolf', 'woman',
+            'worm'
+        ]
 
-    evaluate(model, X_test, y_test)
+        # pull first 9 images out:
+        images = X_train[:9]
 
-    save(model, filename)
+        # make prediction
+        prediction = model.predict(images)
+
+        # create a grid of 3x3 images
+        for i in range(0, 9):
+            ax = pyplot.subplot(330 + 1 + i)
+            ax.title.set_text(categories[np.argmax(prediction[i])])
+            pyplot.imshow(toimage(images[i]))
+
+        # show the plot
+        pyplot.show()
+    else:
+        print('no weights found...')
 
 
 if __name__ == '__main__':
