@@ -18,6 +18,7 @@ from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
 from keras import backend as K
+from keras.callbacks import TensorBoard
 
 # Compile model
 epochs = 50
@@ -72,6 +73,14 @@ def build_model(num_classes):
     return model
 
 
+def tensorboard():
+    # starting tensorboard: tensorboard --logdir=run1:logs/ --port 6006
+    if not path.exists('logs'):
+        os.mkdir('logs')
+    print('--- enabling TensorBoard')
+    return TensorBoard(log_dir='logs', histogram_freq=0, write_graph=True, write_images=True)
+
+
 def train(model, X_train, y_train, X_test, y_test):
     decay = lrate/epochs
     sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
@@ -79,7 +88,7 @@ def train(model, X_train, y_train, X_test, y_test):
     print(model.summary())
 
     # Fit the model
-    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=64)
+    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=64, callbacks=[tensorboard()])
 
     return model
 
