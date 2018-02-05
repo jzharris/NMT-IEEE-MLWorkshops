@@ -1,49 +1,39 @@
 from math import sqrt
-from numpy import concatenate
-from matplotlib import pyplot
 import pandas as pd
-from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 import numpy as np
-import datetime
 from pytz import timezone
+import time
 est = timezone('US/Eastern')
 
+# Step 1: read data in and parse into pandas array
+data = pd.read_csv("merged_data.csv", delimiter=',', encoding="utf-8-sig")
 
-from twilio.rest import Client
-
-# Your Account SID from twilio.com/console
-account_sid = "*******"
-# Your Auth Token from twilio.com/console
-auth_token  = "*******"
-
-client = Client(account_sid, auth_token)
-
-
-
-data = pd.read_csv("merged_data.csv")
-
-datag = data[['Price','Sentiment']].groupby(data['Time']).mean()
-
-from sklearn.preprocessing import MinMaxScaler
-values = datag['Price'].values.reshape(-1,1)
-sentiment = datag['Sentiment'].values.reshape(-1,1)
+values = data['Price'].values.reshape(-1,1)
+sentiment = data['Sentiment'].values.reshape(-1,1)
 values = values.astype('float32')
 sentiment = sentiment.astype('float32')
+
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 
+# Step 2: calculate the test and train sizes
 train_size = int(len(scaled) * 0.7)
 test_size = len(scaled) - train_size
 train, test = scaled[0:train_size,:], scaled[train_size:len(scaled),:]
 print(len(train), len(test))
 split = train_size
 
+# Step 3: make a dataset that an LSTM can understand
+# Ex: given this to be the dataset, and look_back to be 2:
+#     [ 0 1 2 3 4 5 6 7 ] -> [0 1 2]
+#                              [1 2 3]
+#                                [2 3 4]
+#                                  [. . .]
 def create_dataset(dataset, look_back, sentiment, sent=False):
     dataX, dataY = [], []
     for i in range(len(dataset) - look_back):
@@ -64,10 +54,12 @@ testX, testY = create_dataset(test, look_back, sentiment[train_size:len(scaled)]
 trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
 testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
+# Step 4: Create the LSTM model
 model = Sequential()
 model.add(LSTM(100, input_shape=(trainX.shape[1], trainX.shape[2]), return_sequences=True))
 model.add(LSTM(100))
 model.add(Dense(1))
+# MAE measures the average magnitude of the errors in a set of predictions, without considering their direction
 model.compile(loss='mae', optimizer='adam')
 history = model.fit(trainX, trainY, epochs=300, batch_size=100, validation_data=(testX, testY), verbose=0, shuffle=False)
 
@@ -76,44 +68,20 @@ yhat = model.predict(testX)
 yhat_inverse_sent = scaler.inverse_transform(yhat.reshape(-1, 1))
 testY_inverse_sent = scaler.inverse_transform(testY.reshape(-1, 1))
 
+# In a perfectly trained model, this should be 0:
 rmse_sent = sqrt(mean_squared_error(testY_inverse_sent, yhat_inverse_sent))
 print('Test RMSE: %.3f' % rmse_sent)
 
-import MySQLdb
-#Enter the values for you database connection
-dsn_database = "bitcoin"         # e.g. "MySQLdbtest"
-dsn_hostname = "173.194.231.244"      # e.g.: "mydbinstance.xyz.us-east-1.rds.amazonaws.com"
-dsn_port = 3306                  # e.g. 3306 
-dsn_uid = "demo"             # e.g. "user1"
-dsn_pwd = "qwerty@123"              # e.g. "Password123"
-
-conn = MySQLdb.connect(host=dsn_hostname, port=dsn_port, user=dsn_uid, passwd=dsn_pwd, db=dsn_database)
-
-cursor=conn.cursor()
-
-
-import queue 
-import time
-
-import queue
-import matplotlib.pyplot as plt
-true_q = queue.Queue()
-pred_q = queue.Queue()
-'''
-fig = plt.figure()
-ax = fig.add_subplot(111)
-fig.show()
-fig.canvas.draw()
-plt.ion()
-'''
-
+# Step 5: Try to predict something
 def process_data(in_data):
     out_data = []
     for line in in_data:
         out_data.append(float(line.split(',')[0]))
     return np.array(out_data).reshape(-1,1)
+
 prev = 15000
 threshold = 0.05
+
 while True:
     btc = open('live_bitcoin.csv','r')
     sent = open('live_tweet.csv','r')
@@ -122,29 +90,21 @@ while True:
     bit_data = process_data(bit_data[len(bit_data)-5:])
     sent_data = process_data(sent_data[len(sent_data)-5:])
     live = scaler.transform(bit_data)
+
     testX, testY = create_dataset(live, 2, sent_data, sent=True)
     testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
     yhat = model.predict(testX)
+
     yhat_inverse = scaler.inverse_transform(yhat.reshape(-1, 1))
-    true_q.put(bit_data[4])
-    pred_q.put(yhat_inverse[0])
     val = 100*((yhat_inverse[0][0] - prev)/prev)
+
     if val > threshold:
-        decision = 'Buy!!!'
-        message = client.messages.create(to="+15184234418‬", from_="+15188883052", body=decision+' - Price of Bitcoin is expected to rise.')
+        decision = 'Buy!!! Prices are expected to rise'
     elif val <-threshold:
-        decision = 'Sell!!!'
-        message = client.messages.create(to="+15184234418", from_="+15188883052", body=decision+' - Price of Bitcoin is expected to drop.')
+        decision = 'Sell!!! Prices are expected to drop'
     else:
-        decision = ''
+        decision = 'Stay!!! Prices are not expected to change'
     prev = yhat_inverse[0][0]
-    input_string = "INSERT INTO live_data values ({},{},{},'{}','{}');".format(yhat_inverse[0][0],bit_data[0][0],sent_data[4][0],datetime.datetime.now(tz=est).strftime('%Y-%m-%d %H:%M:%S'),decision)
-    cursor.execute(input_string)
-    conn.commit()
+
+    print(decision)
     time.sleep(60)
-    
-    
-
-
-
-
