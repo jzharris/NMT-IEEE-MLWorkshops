@@ -11,6 +11,7 @@ from scipy.misc import toimage
 
 # fix random seed for reproducibility
 seed = 7
+
 numpy.random.seed(seed)
 
 # load data

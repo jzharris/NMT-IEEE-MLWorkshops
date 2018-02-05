@@ -51,9 +51,9 @@ def load_data(filename):
     w_inc = 0
     for _, _, files in os.walk("weights"):
         w_inc += files.__len__()
-    model_name = model_name + "_{}v_{}r_{}".format(2, seq_length, w_inc)
+    model_name = model_name + "_{}v_{}r_{}".format(3, seq_length, w_inc)
     global prev_name
-    prev_name = prev_name + "_{}v_{}r_{}".format(2, seq_length, w_inc - 1)
+    prev_name = prev_name + "_{}v_{}r_{}".format(3, seq_length, w_inc - 1)
 
     ####################################################################################################################
     # load dataset:

@@ -58,6 +58,7 @@ def build_model(num_classes):
     model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
+    model.summary()
 
     return model
 
