@@ -28,7 +28,7 @@ train, test = scaled[0:train_size,:], scaled[train_size:len(scaled),:]
 print(len(train), len(test))
 split = train_size
 
-# Step 3: make a dataset that an LSTM can understand
+# Step 3: split up the dataset into chunks
 # Ex: given this to be the dataset, and look_back to be 2:
 #     [ 0 1 2 3 4 5 6 7 ] -> [0 1 2]
 #                              [1 2 3]
@@ -79,7 +79,7 @@ def process_data(in_data):
         out_data.append(float(line.split(',')[0]))
     return np.array(out_data).reshape(-1,1)
 
-prev = 15000
+prev = 1500
 threshold = 0.05
 
 while True:
