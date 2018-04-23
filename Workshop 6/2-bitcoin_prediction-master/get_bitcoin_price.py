@@ -18,6 +18,7 @@ def getPrices():
         date_tuple = (year_int, month_int, day_int)
         if date_tuple not in date_prices:
             date_string = year_string + "-" + month_string + "-" + day_string
+            print(date_string)
             start_point = r.index(date_string) + 26
             end_point = start_point
             while r[end_point] != '.':
@@ -63,16 +64,6 @@ def getPrices():
             date_tuple = (year_int, month_int, day_int)
             date_prices[date_tuple] = value_float
     return date_prices
-
-
-        #figure out first day in list
-        #if we don't have data for that day
-            #get data
-        #otherwise
-            #find next day's data
-            #add day to days list
-            #if we can't find next day's data
-                #next page
 
 
 target = open('bitcoinprices.txt', 'w')

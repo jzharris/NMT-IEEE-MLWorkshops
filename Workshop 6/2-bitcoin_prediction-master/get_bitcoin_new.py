@@ -1,7 +1,6 @@
 import requests, json
 from time import sleep
 from datetime import datetime
-import sys 
 import traceback
 import argparse
 
@@ -19,11 +18,12 @@ def getBitcoinPrice():
         bitcoindata['datetime'] = datetime.utcfromtimestamp(int(bitcoindata['timestamp'])).strftime('%Y-%m-%d-%H-%M-%S')        
 
         with open(args.outputfile, mode='a') as file:
-            file.write('{},\n'.format(json.dumps(bitcoindata)))     
+            print('{},\n'.format(json.dumps(bitcoindata)))
+            file.write('{},\n'.format(json.dumps(bitcoindata)))
 
     except:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        with open(args.errorfile, mode='a') as file:           
+        # exc_type, exc_value, exc_traceback = sys.exc_info()
+        with open(args.errorfile, mode='a') as file:
            traceback.print_exc(file=file)
            file.write(('-'*100)+'\n\n')
 
